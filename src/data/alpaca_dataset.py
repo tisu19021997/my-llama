@@ -1,4 +1,4 @@
-from datasets import load_dataset
+from data import load_dataset
 from prompts.alpaca import ALPACA_PROMPT_DICT
 
 

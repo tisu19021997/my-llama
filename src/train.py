@@ -10,7 +10,7 @@ from transformers import TrainingArguments
 
 from utils.config_utils import update_config
 from utils.model_utils import load_model_and_tokenizer_for_training
-from datasets.alpaca_dataset import load_alpaca_dataset
+from data.alpaca_dataset import load_alpaca_dataset
 from configs import train_config, quantization_config
 
 

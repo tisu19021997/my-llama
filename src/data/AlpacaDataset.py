@@ -31,9 +31,12 @@ class AlpacaDataset(Dataset):
         training = config.training
 
         # Make sure the df has 3 columns: instruction, input and output.
-        df[config.prompt_column] = df.parallel_apply(
+        self.df = df.copy()
+        self.df['prompt'] = self.df.parallel_apply(
             to_alpaca_prompt, args=(training,), axis=1)
-        self.texts = df[config.prompt_column].values
+        self.df['gt'] = self.df.parallel_apply(
+            to_alpaca_prompt, args=(True,), axis=1)
+        self.texts = self.df['prompt'].values
         self.config = config
         self.tokenizer = tokenizer
 

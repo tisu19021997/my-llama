@@ -6,7 +6,7 @@ from utils.config_utils import update_config
 from utils.model_utils import load_model_and_tokenizer_for_inference
 from utils.inference_utils import inference_loop, compute_score
 from configs import inference_config, quantization_config
-from datasets.AlpacaDataset import AlpacaDataset
+from data.AlpacaDataset import AlpacaDataset
 
 os.environ['TOKENIZERS_PARALLELISM'] = "false"
 
@@ -30,13 +30,13 @@ def main(**kwargs):
     # Get predictions.
     test_preds = inference_loop(
         model, tokenizer, test_dataset, inference_config)
-    test_dataset['prediction'] = test_preds
-    test_dataset[[inference_config.label_column,
-                  'prediction']].to_json('predictions.json', force_ascii=False)
+    test_dataset.df['prediction'] = test_preds
+    test_dataset.df[['gt', 'prediction']].to_json(
+        'predictions.json', force_ascii=False)
 
     test_preds_ans = [test_pred.split(
         inference_config.response_phrase)[-1] for test_pred in test_preds]
-    test_gt_ans = test_dataset[inference_config.label_column].tolist()
+    test_gt_ans = test_dataset.df[inference_config.label_column].tolist()
 
     for pred_, gt_ in zip(test_preds_ans[:5], test_gt_ans[:5]):
         print('Prediction:', pred_)
