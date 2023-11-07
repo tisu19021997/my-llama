@@ -3,28 +3,30 @@ import torch
 import gc
 import evaluate
 import numpy as np
+from transformers import GenerationConfig
 from tqdm import tqdm
 
 
-def inference_loop(model, test_dataset, config):
+def inference_loop(model, test_dataset, tokenizer, config):
     preds = list()
-
+    generation_config = GenerationConfig(
+        do_sample=True,
+        max_new_tokens=config.max_new_tokens,
+        temperature=config.temperature,
+        top_p=config.top_p,
+        repetition_penalty=config.repetition_penalty
+    )
     for inputs in tqdm(test_dataset, total=len(test_dataset)):
         input_ids = inputs['input_ids'].squeeze(0)
         attention_mask = inputs['attention_mask'].squeeze(0)
-        print(input_ids.shape, attention_mask.shape)
-        
         with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=False, enable_mem_efficient=False):
             outputs = model.generate(
                 input_ids,
                 attention_mask=attention_mask,
-                do_sample=True,
-                max_new_tokens=config.max_new_tokens,
-                temperature=config.temperature,
-                top_p=config.top_p,
-                repetition_penalty=config.repetition_penalty
+                generation_config=generation_config
             )[0].to('cpu').numpy()
-        decoded_pred = test_dataset.decode_outputs(outputs)
+        # Remove the input prompt from the result.
+        decoded_pred = tokenizer.decode(outputs[input_ids.shape[1]:], skip_special_tokens=True)
         preds.append(decoded_pred.strip())
 
         del decoded_pred

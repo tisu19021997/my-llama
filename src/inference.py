@@ -22,23 +22,25 @@ def main(**kwargs):
     # Turn on evaluation mode.
     model.eval()
 
-    test_dataset = pd.read_parquet(inference_config.val_dataset)
+    test_df = pd.read_parquet(inference_config.val_dataset)
     if inference_config.debug:
-        test_dataset = test_dataset[:5].copy()
+        test_df = test_df[:5].copy()
 
-    test_dataset = AlpacaDataset(tokenizer, test_dataset, inference_config)
+    test_dataset = AlpacaDataset(tokenizer, test_df, inference_config)
+    result_df = test_dataset.df.copy()
     test_dataset = DataLoader(test_dataset, batch_size=inference_config.batch_size)
 
     # Get predictions.
     test_preds = inference_loop(
-        model, test_dataset, inference_config)
-    test_dataset.df['prediction'] = test_preds
-    test_dataset.df[['gt', 'prediction']].to_json(
+        model, test_dataset, tokenizer, inference_config)
+    result_df['prediction'] = test_preds
+    result_df[['gt', 'prediction']].to_json(
         'predictions.json', force_ascii=False)
 
-    test_preds_ans = [test_pred.split(
-        inference_config.response_phrase)[-1] for test_pred in test_preds]
-    test_gt_ans = test_dataset.df[inference_config.label_column].tolist()
+    #test_preds_ans = [test_pred.split(
+    #    inference_config.response_phrase)[-1] for test_pred in test_preds]
+    test_preds_ans = test_preds
+    test_gt_ans = result_df['output'].tolist()
 
     for pred_, gt_ in zip(test_preds_ans[:5], test_gt_ans[:5]):
         print('Prediction:', pred_)
@@ -49,8 +51,8 @@ def main(**kwargs):
     rouge_scores, _ = compute_score(test_gt_ans, test_preds_ans, tokenizer)
 
     for metric_name, metric_scores in rouge_scores.items():
-        test_dataset[metric_name] = metric_scores
-    test_dataset.to_json('test_result.json', force_ascii=False)
+        result_df[metric_name] = metric_scores
+    result_df.to_json('test_result.json', force_ascii=False)
 
 
 if __name__ == "__main__":

@@ -51,7 +51,6 @@ class AlpacaDataset(Dataset):
         padding = 'max_length'
         if self.config.use_flash_attention:
             padding = False
-        print(type(texts))
         inputs = self.tokenizer(
             texts,
             padding=padding,

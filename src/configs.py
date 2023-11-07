@@ -74,6 +74,7 @@ class inference_config:
     top_p: float = 0.9
     temperature: float = 0.001
     repetition_penalty: float = 1.2
+    response_phrase: str = "### Response:\n"
 
 @dataclass
 class tokenizer_config:
