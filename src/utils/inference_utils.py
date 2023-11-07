@@ -5,39 +5,26 @@ import evaluate
 import numpy as np
 from tqdm import tqdm
 
-os.environ['TOKENIZERS_PARALLELISM'] = "false"
 
-
-def encode_texts(texts, tokenizer, config):
-    padding = 'max_length'
-    if config.use_flash_attention:
-        padding = False
-    encoded_texts = tokenizer(
-        texts,
-        padding=padding,
-        truncation=True,
-        max_length=config.max_length,
-        return_tensors='pt'
-    )
-    encoded_texts = {k: v.to('cuda') for k, v in encoded_texts.items()}
-    return encoded_texts
-
-
-def inference_loop(model, tokenizer, test_dataset, config):
+def inference_loop(model, test_dataset, config):
     preds = list()
 
-    for text in tqdm(test_dataset.texts, total=len(test_dataset.texts)):
-        inputs = encode_texts(text, tokenizer, config)
+    for inputs in tqdm(test_dataset, total=len(test_dataset)):
+        input_ids = inputs['input_ids'].squeeze(0)
+        attention_mask = inputs['attention_mask'].squeeze(0)
+        print(input_ids.shape, attention_mask.shape)
+        
         with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=False, enable_mem_efficient=False):
-            encoded_pred = model.generate(
-                **inputs,
+            outputs = model.generate(
+                input_ids,
+                attention_mask=attention_mask,
                 do_sample=True,
                 max_new_tokens=config.max_new_tokens,
                 temperature=config.temperature,
                 top_p=config.top_p,
                 repetition_penalty=config.repetition_penalty
             )[0].to('cpu').numpy()
-        decoded_pred = tokenizer.decode(encoded_pred, skip_special_tokens=True)
+        decoded_pred = test_dataset.decode_outputs(outputs)
         preds.append(decoded_pred.strip())
 
         del decoded_pred

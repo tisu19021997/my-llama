@@ -66,7 +66,14 @@ class inference_config:
     val_dataset: str = ""
     train_split: str = "train[:50%]"
     val_split: str = "eval"
-
+    batch_size: int = 1
+        
+    max_length: int = 2048
+        
+    max_new_tokens: int = 512
+    top_p: float = 0.9
+    temperature: float = 0.001
+    repetition_penalty: float = 1.2
 
 @dataclass
 class tokenizer_config:
@@ -77,21 +84,12 @@ class tokenizer_config:
 
 
 @dataclass
-class generation_config:
-    max_new_tokens: int = 512
-    top_p: float = 0.9
-    temperature: float = 0.001
-    repetition_penalty: float = 1.2
-
-
-@dataclass
 class quantization_config:
     load_in_4bit: bool = True
     load_in_8bit: bool = False
     bnb_4bit_compute_dtype: bool = "float16"
     bnb_4bit_quant_type: bool = "fp4"
     bnb_4bit_use_double_quant: bool = True
-
 
 @dataclass
 class lora_config:

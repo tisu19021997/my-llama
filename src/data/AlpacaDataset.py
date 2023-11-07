@@ -36,7 +36,7 @@ class AlpacaDataset(Dataset):
             to_alpaca_prompt, args=(training,), axis=1)
         self.df['gt'] = self.df.parallel_apply(
             to_alpaca_prompt, args=(True,), axis=1)
-        self.texts = self.df['prompt'].values
+        self.texts = self.df['prompt'].values.tolist()
         self.config = config
         self.tokenizer = tokenizer
 
@@ -44,15 +44,15 @@ class AlpacaDataset(Dataset):
         return len(self.texts)
 
     def __getitem__(self, item):
-        inputs = self.encode_texts(
-            self.texts[item], self.tokenizer, self.config)
+        inputs = self.encode_texts(self.texts[item])
         return inputs
 
-    def encode_texts(self, texts, tokenizer):
+    def encode_texts(self, texts):
         padding = 'max_length'
         if self.config.use_flash_attention:
             padding = False
-        inputs = tokenizer(
+        print(type(texts))
+        inputs = self.tokenizer(
             texts,
             padding=padding,
             truncation=True,
@@ -61,3 +61,6 @@ class AlpacaDataset(Dataset):
         )
         inputs = {k: v.to('cuda') for k, v in inputs.items()}
         return inputs
+    
+    def decode_outputs(self, outputs):
+        texts = self.tokenizer.decode(outputs, skip_special_tokens=True)

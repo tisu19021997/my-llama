@@ -11,6 +11,7 @@ from transformers import (
     AutoTokenizer
 )
 
+from dataclasses import asdict
 
 def load_model_and_tokenizer_for_training(
         train_config,
@@ -28,9 +29,8 @@ def load_model_and_tokenizer_for_training(
             torch_dtype=torch.float16
         )
         return model
-
-    quantization_config = BitsAndBytesConfig(**quantization_config)
-    lora_config = LoraConfig(**lora_config)
+    quantization_config = BitsAndBytesConfig(**asdict(quantization_config()))
+    lora_config = LoraConfig(**asdict(lora_config()))
     model = LlamaForCausalLM.from_pretrained(
         model_name,
         return_dict=True,
@@ -67,7 +67,7 @@ def load_model_and_tokenizer_for_inference(
         )
         return model
 
-    quantization_config = BitsAndBytesConfig(**quantization_config)
+    quantization_config = BitsAndBytesConfig(**asdict(quantization_config()))
     model = LlamaForCausalLM.from_pretrained(
         model_name,
         return_dict=True,
@@ -82,6 +82,9 @@ def load_model_and_tokenizer_for_inference(
 
     # Tokenizer.
     tokenizer = AutoTokenizer.from_pretrained(model_name)
+    if not tokenizer.pad_token:
+        tokenizer.pad_token = tokenizer.eos_token
+        tokenizer.padding_side = 'left'
 
     return model, tokenizer
 
