@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "my-llama"
+version = "0.1.0"
+description = ""
+authors = ["quangpham <quangphamm1902@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+
+[[tool.poetry.source]]
+name = "pytorch"
+url = "https://download.pytorch.org/whl/cu118"
+priority = "explicit"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
