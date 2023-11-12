@@ -6,7 +6,7 @@ from utils.config_utils import update_config
 from utils.model_utils import load_model_and_tokenizer_for_inference
 from utils.inference_utils import inference_loop, compute_score
 from configs import inference_config, quantization_config
-from data.AlpacaDataset import AlpacaDataset
+from data.AlpacaDataset import AlpacaDataset, to_mcq_prompt, to_alpaca_prompt
 from torch.utils.data import DataLoader
 
 os.environ['TOKENIZERS_PARALLELISM'] = "false"
@@ -26,7 +26,13 @@ def main(**kwargs):
     if inference_config.debug:
         test_df = test_df[:5].copy()
 
-    test_dataset = AlpacaDataset(tokenizer, test_df, inference_config)
+    if inference_config.dataset_type == 'mcq':
+        prompt_format_fn = to_mcq_prompt
+    else:
+        prompt_format_fn = to_alpaca_prompt
+
+    test_dataset = AlpacaDataset(
+        tokenizer, test_df, inference_config, prompt_format_fn)
     result_df = test_dataset.df.copy()
     test_dataset = DataLoader(
         test_dataset, batch_size=inference_config.batch_size)
