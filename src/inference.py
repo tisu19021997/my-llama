@@ -28,7 +28,8 @@ def main(**kwargs):
 
     test_dataset = AlpacaDataset(tokenizer, test_df, inference_config)
     result_df = test_dataset.df.copy()
-    test_dataset = DataLoader(test_dataset, batch_size=inference_config.batch_size)
+    test_dataset = DataLoader(
+        test_dataset, batch_size=inference_config.batch_size)
 
     # Get predictions.
     test_preds = inference_loop(
@@ -37,18 +38,17 @@ def main(**kwargs):
     result_df[['gt', 'prediction']].to_json(
         'predictions.json', force_ascii=False)
 
-    #test_preds_ans = [test_pred.split(
+    # test_preds_ans = [test_pred.split(
     #    inference_config.response_phrase)[-1] for test_pred in test_preds]
-    test_preds_ans = test_preds
     test_gt_ans = result_df['output'].tolist()
 
-    for pred_, gt_ in zip(test_preds_ans[:5], test_gt_ans[:5]):
+    for pred_, gt_ in zip(test_preds[:5], test_gt_ans[:5]):
         print('Prediction:', pred_)
         print('Ground truth:', gt_)
         print('\n\n')
 
     # Get evaluation scores: ROUGE and BLEU.
-    rouge_scores, _ = compute_score(test_gt_ans, test_preds_ans, tokenizer)
+    rouge_scores, _ = compute_score(test_gt_ans, test_preds, tokenizer)
 
     for metric_name, metric_scores in rouge_scores.items():
         result_df[metric_name] = metric_scores

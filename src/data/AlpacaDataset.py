@@ -26,16 +26,27 @@ def to_alpaca_prompt(example, training=True):
     return prompt
 
 
+def to_mcq_prompt(example, training=True):
+    instruction = "Choose the correct answer for the question from the choices below. Only output the correct choice, nothing else.\n\n"
+    instruction += example['question'] + '\n'
+    instruction += '\n'.join(example['choices'])
+    prompt = ALPACA_PROMPT_DICT['prompt_no_input'].format(
+        instruction=instruction)
+    if training:
+        prompt += example['answer']
+    return prompt
+
+
 class AlpacaDataset(Dataset):
-    def __init__(self, tokenizer, df, config):
+    def __init__(self, tokenizer, df, config, prompt_format_fn=to_alpaca_prompt):
         training = config.training
 
         # Make sure the df has 3 columns: instruction, input and output.
         self.df = df.copy()
         self.df['prompt'] = self.df.parallel_apply(
-            to_alpaca_prompt, args=(training,), axis=1)
+            prompt_format_fn, args=(training,), axis=1)
         self.df['gt'] = self.df.parallel_apply(
-            to_alpaca_prompt, args=(True,), axis=1)
+            prompt_format_fn, args=(True,), axis=1)
         self.texts = self.df['prompt'].values.tolist()
         self.config = config
         self.tokenizer = tokenizer
@@ -60,6 +71,6 @@ class AlpacaDataset(Dataset):
         )
         inputs = {k: v.to('cuda') for k, v in inputs.items()}
         return inputs
-    
+
     def decode_outputs(self, outputs):
         texts = self.tokenizer.decode(outputs, skip_special_tokens=True)
