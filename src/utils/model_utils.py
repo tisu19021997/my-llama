@@ -13,6 +13,7 @@ from transformers import (
 
 from dataclasses import asdict
 
+
 def load_model_and_tokenizer_for_training(
         train_config,
         quantization_config=None,
@@ -24,7 +25,7 @@ def load_model_and_tokenizer_for_training(
         model_name, add_eos_token=True, trust_remote_code=True)
     tokenizer.pad_token_id = tokenizer.eos_token_id
     tokenizer.padding_side = 'left'
-    
+
     device_map = None if train_config.use_flash_attention else 'auto'
     if not train_config.quantization:
         model = LlamaForCausalLM.from_pretrained(
@@ -64,7 +65,7 @@ def load_model_and_tokenizer_for_inference(
         tokenizer.pad_token_id = tokenizer.bos_token_id
         tokenizer.padding_side = 'left'
     assert tokenizer.pad_token and tokenizer.pad_token_id and tokenizer.padding_side == 'left', 'Wrong config for tokenizer.'
-        
+
     device_map = None if inference_config.use_flash_attention else "auto"
     if not inference_config.quantization:
         model = LlamaForCausalLM.from_pretrained(
@@ -75,7 +76,7 @@ def load_model_and_tokenizer_for_inference(
             offload_folder='tmp',
             pretraining_tp=1,
         )
-        model.half().cuda()
+        # model.half().cuda()
         return model, tokenizer
 
     quantization_config = BitsAndBytesConfig(**asdict(quantization_config()))
@@ -90,6 +91,7 @@ def load_model_and_tokenizer_for_inference(
 
     if inference_config.peft_model:
         model = PeftModel.from_pretrained(model, inference_config.peft_model)
+        model = model.merge_and_unload()
     model.eval()
 
     return model, tokenizer
